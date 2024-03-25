@@ -1,0 +1,35 @@
+import tensorflow as tf
+
+class Perceptron:
+    def __init__(self, num_inputs):
+        self.weights = tf.Variable(tf.random.uniform(shape=(num_inputs, 1)))
+        self.bias = tf.Variable(tf.random.uniform(shape=(1,)))
+
+    def __call__(self, x):
+        return tf.matmul(x, self.weights) + self.bias
+
+    def train(self, inputs, targets, learning_rate=0.1, epochs=100):
+        for epoch in range(epochs):
+            with tf.GradientTape() as tape:
+                predictions = self(inputs)
+                loss = tf.reduce_mean(tf.square(predictions - targets))
+            gradients = tape.gradient(loss, [self.weights, self.bias])
+            self.weights.assign_sub(learning_rate * gradients[0])
+            self.bias.assign_sub(learning_rate * gradients[1])
+            if epoch % 10 == 0:
+                print(f'Epoch {epoch}, Loss: {loss.numpy()}')
+
+# Example usage:
+# Define the inputs and targets
+inputs = tf.constant([[0.1, 0.2], [0.3, 0.4], [0.5, 0.6]], dtype=tf.float32)
+targets = tf.constant([[0.5], [0.8], [1.0]], dtype=tf.float32)
+
+# Create a Perceptron with 2 input features
+perceptron = Perceptron(num_inputs=2)
+
+# Train the Perceptron
+perceptron.train(inputs, targets)
+
+# Make predictions
+predictions = perceptron(inputs)
+print("Predictions:", predictions.numpy())
