@@ -1,0 +1,42 @@
+import numpy as np
+from tensorflow.keras.applications import VGG16
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, Flatten
+from tensorflow.keras.datasets import cifar10
+from tensorflow.keras.utils import to_categorical
+from tensorflow.keras.optimizers import SGD
+
+# Load CIFAR-10 dataset
+(x_train, y_train), (x_test, y_test) = cifar10.load_data()
+
+# Normalize pixel values
+x_train = x_train / 255.0
+x_test = x_test / 255.0
+
+# Convert labels to one-hot encoding
+y_train = to_categorical(y_train)
+y_test = to_categorical(y_test)
+
+# Load the pre-trained VGG16 model without the top (fully connected) layers
+base_model = VGG16(weights='imagenet', include_top=False, input_shape=(32, 32, 3))
+
+# Freeze the pre-trained layers
+for layer in base_model.layers:
+    layer.trainable = False
+
+# Create a new model on top of the pre-trained base model
+model = Sequential()
+model.add(base_model)
+model.add(Flatten())
+model.add(Dense(256, activation='relu'))
+model.add(Dense(10, activation='softmax'))  # Change the output to 10 classes for CIFAR-10
+
+# Compile the model
+model.compile(optimizer=SGD(lr=0.001), loss='categorical_crossentropy', metrics=['accuracy'])
+
+# Train the model
+model.fit(x_train, y_train, epochs=5, batch_size=32, validation_data=(x_test, y_test))
+
+# Evaluate the model
+test_loss, test_acc = model.evaluate(x_test, y_test)
+print('Test accuracy:', test_acc)
